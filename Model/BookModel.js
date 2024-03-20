@@ -10,6 +10,6 @@ const BookSchema = mongoose.Schema({
     versionKey : false
 })
 
-const BookModel = mongoose.model('users',BookSchema)
+const BookModel = mongoose.model('books',BookSchema)
 
 module.exports = { BookModel }
