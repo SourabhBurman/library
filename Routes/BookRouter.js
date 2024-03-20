@@ -1,6 +1,7 @@
 const express = require('express');
 const { BookModel } = require('../Model/BookModel');
 const { authorization } = require('../Middleware/authorization');
+const { authentication } = require('../Middleware/authentication');
 
 const bookRouter = express.Router();
 
@@ -32,7 +33,7 @@ bookRouter.get('/:bookId',async (req,res)=> {
     }
 })
 
-bookRouter.post('/',authorization,async (req,res)=> {
+bookRouter.post('/',authentication,authorization,async (req,res)=> {
     const { title, author, category, price, quantity} = req.body;
     try{
       const newBook = new BookModel({title, author, category, price, quantity})
@@ -43,7 +44,7 @@ bookRouter.post('/',authorization,async (req,res)=> {
     }
 })
 
-bookRouter.patch('/:bookId',authorization,async (req,res)=> {
+bookRouter.patch('/:bookId',authentication,authorization,async (req,res)=> {
     const update = req.body;
     const {bookId} = req.params;
     try{
@@ -54,7 +55,7 @@ bookRouter.patch('/:bookId',authorization,async (req,res)=> {
     }
 })
 
-bookRouter.delete('/:bookId',authorization,async (req,res)=> {
+bookRouter.delete('/:bookId',authentication,authorization,async (req,res)=> {
     const update = req.body;
     const {bookId} = req.params;
     try{

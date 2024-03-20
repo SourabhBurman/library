@@ -5,6 +5,7 @@ const { UserModel } = require('../Model/UserModel');
 
 const userRouter = express.Router();
 
+
 userRouter.post('/register', async (req,res)=> {
 
     const { name, email, password, isAdmin} = req.body;
