@@ -5,7 +5,7 @@ const { authorization } = require('../Middleware/authorization');
 
 const orderRouter = express.Router();
 
-orderRouter.get('/orders',authentication,async(req,res)=> {
+orderRouter.get('/orders',authentication,authorization,async(req,res)=> {
     try{
       const allOrders = await OrderModel.find().populate("user books");
       res.status(201).send({msg:"list of all orders",allOrders});
