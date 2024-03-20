@@ -1,12 +1,14 @@
 const express = require("express");
 const { connection } = require("./Config/db");
+const { userRouter } = require("./Routes/UserRouter");
+const { bookRouter } = require("./Routes/BookRouter");
 require("dotenv").config();
 const PORT = process.env.PORT;
 const app = express();
+app.use(express.json());
 
-app.get('/',(req,res)=> {
-  res.send({"msg":"homepage"})
-})
+app.use('/',userRouter);
+app.use('/books',bookRouter);
 
 app.listen(PORT, async()=> {
     await connection
