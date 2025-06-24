@@ -1,0 +1,11 @@
+{
+    "watch": ["src/**/*"],  
+    "ext": "ts",  
+    "ignore": [
+        "src/**/*.spec.ts"  
+    ],
+    "exec": "ts-node src/app.ts",  
+    "restartable": "rs", 
+    "delay": "1000",  
+    "verbose": true  
+}
