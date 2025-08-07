@@ -1,9 +1,18 @@
-import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  Entity,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 import { GENDER } from "../enums";
-import { Book } from "./books.entity";
+import { Role } from "./role.entity";
+import { Transaction } from "./transaction.entity";
 
 @Entity()
-export class Reader {
+export class User {
   @PrimaryGeneratedColumn()
   id: string;
 
@@ -13,6 +22,18 @@ export class Reader {
   @Column({ type: "enum", enum: GENDER, default: GENDER.OTHER })
   gender: GENDER;
 
-  @ManyToMany(() => Book, (book) => book.readers)
-  books: Book[]; // One reader can have many books
+  @Column({ type: "varchar", nullable: false, unique: true })
+  email: string;
+
+  @Column({ type: "varchar", nullable: false })
+  password: string;
+
+  @Column({ type: "float", default: 0, comment: "Balance in INR" })
+  balance: number;
+
+  @ManyToOne(() => Role, (role) => role.users)
+  role: Role;
+
+  @OneToMany(() => Transaction, (transaction) => transaction.user)
+  transactions: Transaction[];
 }

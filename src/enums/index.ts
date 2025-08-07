@@ -12,3 +12,16 @@ export enum GENDER {
   FEMALE = "Female",
   OTHER = "Other",
 }
+
+export enum ROLE {
+  ADMIN = "Admin",
+  READER = "Reader",
+  AUTHOR = "Author",
+}
+
+export enum TRANSACTION_TYPE {
+  BORROW = "Borrow",
+  RETURN = "Return",
+  PURCHASE = "Purchase",
+  PUBLISH = "Publish",
+}

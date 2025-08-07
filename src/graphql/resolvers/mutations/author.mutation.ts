@@ -5,13 +5,13 @@ const authorRepository = DBModle.dbInstance.getRepository(Author);
 
 export const authorMutation = {
   addAuthor: async (_: unknown, args: { input: Author }) => {
-    const { age, name, books, email } = args.input;
+    const { age, name, publishedBooks, email } = args.input;
 
     try {
       const newAuthor = authorRepository.create({
         age,
         name,
-        books,
+        publishedBooks,
         email,
       });
 

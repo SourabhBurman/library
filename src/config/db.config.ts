@@ -1,7 +1,9 @@
 import { DataSourceOptions } from "typeorm";
-import { Author } from "../entity/author.entity";
 import { Book } from "../entity/books.entity";
-import { Reader } from "../entity/user.entity";
+import { User } from "../entity/user.entity";
+import { Role } from "../entity/role.entity";
+import { Permission } from "../entity/permission.entity";
+import { Transaction } from "../entity/transaction.entity";
 
 export const DB_CONFIG: DataSourceOptions = {
   type: "postgres",
@@ -10,5 +12,6 @@ export const DB_CONFIG: DataSourceOptions = {
   password: "123456",
   database: "library",
   synchronize: true,
-  entities: [Author, Book, Reader],
+  logging: true,
+  entities: [Book, User, Role, Permission, Transaction],
 };

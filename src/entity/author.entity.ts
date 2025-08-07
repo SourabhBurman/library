@@ -16,5 +16,5 @@ export class Author {
   age: number;
 
   @OneToMany(() => Book, (book) => book.author)
-  books: Book[]; // One author can have many books
+  publishedBooks: Book[]; // One author can have many books
 }

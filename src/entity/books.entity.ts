@@ -1,14 +1,6 @@
-import {
-  Column,
-  Entity,
-  JoinTable,
-  ManyToMany,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from "typeorm";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { BOOK_GENRE } from "../enums";
-import { Author } from "./author.entity";
-import { Reader } from "./user.entity";
+import { Transaction } from "./transaction.entity";
 
 @Entity()
 export class Book {
@@ -24,10 +16,25 @@ export class Book {
   @Column({ type: "enum", enum: BOOK_GENRE, default: BOOK_GENRE.OTHER })
   genre: BOOK_GENRE;
 
-  @ManyToOne(() => Author, (author) => author.books)
-  author: Author;
+  @Column({ type: "int", default: 1, comment: "Total number of copies" })
+  totalQuantities: number;
 
-  @ManyToMany(() => Reader, (reader) => reader.books)
-  @JoinTable({ name: "library" })
-  readers: Reader[]; // One book can be read by many readers
+  @Column({ type: "int", default: 1 })
+  quantityAvailable: number;
+
+  @Column({ type: "float", nullable: true, comment: "Price in INR" })
+  cost: number;
+
+  @Column({
+    type: "float",
+    nullable: true,
+    comment: "Price in INR for a day",
+  })
+  rentPrice: number;
+
+  @Column({ type: "date", nullable: true })
+  publishedDate: Date;
+
+  @OneToMany(() => Book, (book) => book.transactions)
+  transactions: Transaction[];
 }
