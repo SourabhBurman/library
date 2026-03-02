@@ -19,7 +19,7 @@ export class Role {
   role: ROLE;
 
   @Column({ type: "varchar", nullable: false })
-  displayName: string;
+  display_name: string;
 
   @OneToMany(() => User, (user) => user.role)
   users: User[];

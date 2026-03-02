@@ -10,7 +10,7 @@ export const setPaginationFilters = <T>(
   pagination: PaginationInput,
   filters: FilterInput
 ) => {
-  const { pageNumber = 1, pageSize = 10 } = pagination;
+  const { pageNumber = 1, pageSize = 10 } = pagination ?? {};
 
   if (filters) {
     if (filters.and) {

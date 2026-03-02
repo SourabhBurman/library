@@ -19,7 +19,6 @@ const server = new ApolloServer({
 });
 
 const app = express();
-app.use(express.json());
 
 (async () => {
   try {

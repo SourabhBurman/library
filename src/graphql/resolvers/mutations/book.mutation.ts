@@ -5,13 +5,13 @@ const bookRepository = DBModle.dbInstance.getRepository(Book);
 
 export const bookMutation = {
   createBook: async (_, args: { input: Book }) => {
-    const { totalQuantities } = args.input;
+    const { total_quantities } = args.input;
 
     try {
       const newBook = bookRepository.create({
         ...args.input,
-        quantityAvailable: totalQuantities,
-        publishedDate: new Date(),
+        quantity_available: total_quantities,
+        published_date: new Date(),
       });
 
       const savedBook = await bookRepository.save(newBook);

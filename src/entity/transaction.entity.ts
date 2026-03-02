@@ -19,13 +19,13 @@ export class Transaction {
     enum: TRANSACTION_TYPE,
     default: TRANSACTION_TYPE.BORROW,
   })
-  transactionType: TRANSACTION_TYPE;
+  transaction_type: TRANSACTION_TYPE;
 
   @Column({ type: "int", nullable: false })
   quantity: number;
 
   @Column({ type: "date", default: () => "CURRENT_DATE" })
-  transactionDate: Date;
+  transaction_date: Date;
 
   @ManyToOne(() => User, (user) => user.transactions)
   user: User;

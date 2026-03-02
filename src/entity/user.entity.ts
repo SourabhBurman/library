@@ -1,15 +1,15 @@
 import {
   Column,
   Entity,
-  ManyToMany,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
 import { GENDER } from "../enums";
 import { Role } from "./role.entity";
 import { Transaction } from "./transaction.entity";
+import { Book } from "./books.entity";
+import { BookUser } from "./bookUser.entity";
 
 @Entity()
 export class User {
@@ -36,4 +36,10 @@ export class User {
 
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions: Transaction[];
+
+  @OneToMany(()=> Book, (book)=> book.author)
+  published_books: Book[];
+
+  @OneToMany(()=> BookUser, (bookUser)=> bookUser.user)
+  book_users: BookUser[];
 }

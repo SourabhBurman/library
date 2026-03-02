@@ -16,14 +16,14 @@ export const transactionMutation = {
     context: any
   ) => {
     const obj = input?.at(0);
-    const { book, transactionType, quantity } = obj;
-    const isPurchase = transactionType === TRANSACTION_TYPE.PURCHASE;
+    const { book, transaction_type, quantity } = obj;
+    const isPurchase = transaction_type === TRANSACTION_TYPE.PURCHASE;
     try {
       const bookDetail = await bookRepository.findOne({
         where: { id: book as unknown as string },
       });
       const amount =
-        quantity * (isPurchase ? bookDetail.cost : bookDetail.rentPrice);
+        quantity * (isPurchase ? bookDetail.cost : bookDetail.rent_price);
       const newTransaction = transactionRepository.create({
         ...obj,
         user: context.user?.id,
@@ -31,10 +31,10 @@ export const transactionMutation = {
       const [transactionResponse] = await Promise.all([
         transactionRepository.save(newTransaction),
         bookRepository.update(book as unknown as string, {
-          quantityAvailable:
-            transactionType === TRANSACTION_TYPE.RETURN
-              ? bookDetail.quantityAvailable + quantity
-              : bookDetail.quantityAvailable - quantity,
+          quantity_available:
+            transaction_type === TRANSACTION_TYPE.RETURN
+              ? bookDetail.quantity_available + quantity
+              : bookDetail.quantity_available - quantity,
         }),
         userRepository.update(context.user.id, {
           balance: context.user.balance - amount,

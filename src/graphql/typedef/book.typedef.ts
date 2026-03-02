@@ -6,6 +6,16 @@ export const bookTypeDef = gql`
     Romance
     Fantasy
     Mystery
+    Thriller
+    Adventure
+    Biography
+    History
+    SelfHelp
+    Business
+    Health
+    Drama
+    Finance
+    Technology
     Other
   }
 
