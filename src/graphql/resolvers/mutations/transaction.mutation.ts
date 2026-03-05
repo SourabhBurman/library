@@ -15,7 +15,7 @@ export const transactionMutation = {
     { input }: { input: Transaction[] },
     context: any
   ) => {
-    const obj = input?.at(0);
+    const obj = input?.[0];
     const { book, transaction_type, quantity } = obj;
     const isPurchase = transaction_type === TRANSACTION_TYPE.PURCHASE;
     try {
