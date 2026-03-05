@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon"
+    "start": "nodemon",
+    "build": "tsc"
   },
   "author": "",
   "license": "ISC",
@@ -23,5 +24,8 @@
     "pg": "^8.15.6",
     "ts-node": "^10.9.2",
     "typeorm": "^0.3.23"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }
