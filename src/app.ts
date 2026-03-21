@@ -11,11 +11,16 @@ import jwt from "jsonwebtoken";
 import { GraphQLError } from "graphql";
 import { loginFunction } from "./graphql/resolvers/queries/user.queries";
 import { signupFunction } from "./graphql/resolvers/mutations/user.mutation";
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+
 const PORT = process.env.PORT || 3000;
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+    plugins: [
+    ApolloServerPluginLandingPageLocalDefault({ embed: true }),
+  ],
 });
 
 const app = express();
