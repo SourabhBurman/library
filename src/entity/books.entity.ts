@@ -1,13 +1,10 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, OneToMany } from "typeorm";
+import { BaseModel } from "./base.entity";
 import { BOOK_GENRE } from "../enums";
-import { Transaction } from "./transaction.entity";
-import { User } from "./user.entity";
-import { BookUser } from "./bookUser.entity";
+import { LibraryBook } from "./library_book.entity";
 
 @Entity()
-export class Book {
-  @PrimaryGeneratedColumn()
-  id: string;
+export class Book extends BaseModel {
 
   @Column({ type: "varchar", nullable: false })
   name: string;
@@ -17,9 +14,6 @@ export class Book {
 
   @Column({ type: "enum", enum: BOOK_GENRE, default: BOOK_GENRE.OTHER })
   genre: BOOK_GENRE;
-
-  @Column({ type: "int", default: 1, comment: "Total number of copies" })
-  total_quantities: number;
 
   @Column({ type: "int", default: 1 })
   quantity_available: number;
@@ -37,13 +31,6 @@ export class Book {
   @Column({ type: "date", nullable: true })
   published_date: Date;
 
-  @OneToMany(() => Book, (book) => book.transactions)
-  transactions: Transaction[];
-
-  @ManyToOne(()=> User, (user)=> user.published_books)
-  author: User;
-
-  @OneToMany(()=> BookUser, (book_user)=> book_user.book)
-  book_users: BookUser[];
-
+  @OneToMany(() => LibraryBook, (libraryBook) => libraryBook.book)
+  library_books: LibraryBook[];
 }

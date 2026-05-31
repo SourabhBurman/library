@@ -1,16 +1,12 @@
-import { DBModle } from "../../../config/db.connection";
+import { bookRepository, DBModle } from "../../../config/db.connection";
 import { Book } from "../../../entity/books.entity";
 
-const bookRepository = DBModle.dbInstance.getRepository(Book);
 
 export const bookMutation = {
   createBook: async (_, args: { input: Book }) => {
-    const { total_quantities } = args.input;
-
     try {
       const newBook = bookRepository.create({
         ...args.input,
-        quantity_available: total_quantities,
         published_date: new Date(),
       });
 
@@ -36,6 +32,25 @@ export const bookMutation = {
     } catch (error) {
       console.error("Error updating book:", error);
       throw new Error("Failed to update book");
+    }
+  },
+
+  deleteBook: async (_, args: { id: string }) => {
+    const { id } = args;
+    try {
+      const bookToDelete = await bookRepository.findOne({
+        where: { id },
+      });
+
+      if (!bookToDelete) {
+        throw new Error(`Book with ID ${id} not found`);
+      }
+
+      await bookRepository.remove(bookToDelete);
+      return { message: "Book deleted successfully", success: true };
+    } catch (error) {
+      console.error("Error deleting book:", error);
+      throw new Error("Failed to delete book");
     }
   },
 };

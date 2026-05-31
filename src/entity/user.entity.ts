@@ -3,18 +3,16 @@ import {
   Entity,
   ManyToOne,
   OneToMany,
-  PrimaryGeneratedColumn,
+  OneToOne
 } from "typeorm";
+import { BaseModel } from "./base.entity";
 import { GENDER } from "../enums";
+import { Library } from "./library.entity";
 import { Role } from "./role.entity";
-import { Transaction } from "./transaction.entity";
-import { Book } from "./books.entity";
-import { BookUser } from "./bookUser.entity";
+import { Order } from "./order.entity";
 
 @Entity()
-export class User {
-  @PrimaryGeneratedColumn()
-  id: string;
+export class User extends BaseModel {
 
   @Column({ type: "varchar", nullable: false })
   name: string;
@@ -34,12 +32,9 @@ export class User {
   @ManyToOne(() => Role, (role) => role.users)
   role: Role;
 
-  @OneToMany(() => Transaction, (transaction) => transaction.user)
-  transactions: Transaction[];
+  @OneToOne(()=> Library, (library)=> library.owner)
+  library_owned: Library;
 
-  @OneToMany(()=> Book, (book)=> book.author)
-  published_books: Book[];
-
-  @OneToMany(()=> BookUser, (bookUser)=> bookUser.user)
-  book_users: BookUser[];
+  @OneToMany(()=> Order, (order)=> order.user)
+  orders: Order[];
 }

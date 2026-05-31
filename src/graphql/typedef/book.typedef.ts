@@ -1,6 +1,9 @@
 import gql from "graphql-tag";
 
 export const bookTypeDef = gql`
+
+  scalar Date
+
   enum Genre {
     Horror
     Romance
@@ -42,7 +45,7 @@ export const bookTypeDef = gql`
     name: String!
     description: String
     genre: Genre
-    totalQuantities: Int
+    quantityAvailable: Int
     cost: Float
     rentPrice: Float
   }
@@ -52,7 +55,6 @@ export const bookTypeDef = gql`
     description: String
     genre: Genre
     quantityAvailable: Int
-    totalQuantities: Int
     cost: Float
     rentPrice: Float
     publishedDate: Date
@@ -77,7 +79,6 @@ export const bookTypeDef = gql`
     description: String
     genre: Genre
     quantityAvailable: Int
-    totalQuantities: Int
     cost: Float
     rentPrice: Float
     publishedDate: Date
@@ -91,5 +92,6 @@ export const bookTypeDef = gql`
   type Mutation {
     createBook(input: BookInput!): Book!
     updateBook(id: ID!, input: updateBookInput!): Book
+    deleteBook(id: ID!): Response
   }
 `;

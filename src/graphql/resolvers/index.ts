@@ -6,8 +6,12 @@ import { roleQueries } from "./queries/role.queries";
 import { permissionQueries } from "./queries/permission.queries";
 import { permissionMutation } from "./mutations/permissions.mutation";
 import { roleMutation } from "./mutations/role.mutation";
-import { transactionMutation } from "./mutations/transaction.mutation";
-import { transactionQueries } from "./queries/transaction.queries";
+import { transactionQueries } from "./queries/transactionHistory.queries";
+import { libraryMutation } from "./mutations/library.mutation";
+import { orderMutation } from "./mutations/order.mutation";
+import { libraryQueries } from "./queries/library.queries";
+import { libraryBookQueries } from "./queries/library_book.queries";
+import { libraryBookMutation } from "./mutations/libray_book.mutation";
 
 export const resolvers = {
   Query: {
@@ -16,12 +20,16 @@ export const resolvers = {
     ...userQueries,
     ...permissionQueries,
     ...transactionQueries,
+    ...libraryQueries,
+    ...libraryBookQueries,
   },
   Mutation: {
     ...bookMutation,
     ...userMutation,
     ...permissionMutation,
     ...roleMutation,
-    ...transactionMutation,
+    ...orderMutation,
+    ...libraryMutation,
+    ...libraryBookMutation,
   },
 };

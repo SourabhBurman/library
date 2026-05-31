@@ -18,8 +18,6 @@ export const UserTypeDef = gql`
     name: String
     password: String
     gender: GENDER
-    role: ID
-    balance: Float
   }
 
   type User {
@@ -30,15 +28,12 @@ export const UserTypeDef = gql`
     role: Role
     accessToken: String
     refreshToken: String
-    booksBorrowed: [Transaction!]
-    booksPublished: [Transaction!]
-    booksPurchased: [Transaction!]
     balance: Float
   }
 
   type Query {
     getUsers: [User!]
-    getUser(id: ID!): User
+    getUser(id: ID): User
   }
 
   type Mutation {

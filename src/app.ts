@@ -11,16 +11,16 @@ import jwt from "jsonwebtoken";
 import { GraphQLError } from "graphql";
 import { loginFunction } from "./graphql/resolvers/queries/user.queries";
 import { signupFunction } from "./graphql/resolvers/mutations/user.mutation";
-import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin/landingPage/default";
+import { seedBooks } from "./seed-books";
+import cookieParser from "cookie-parser";
 
 const PORT = process.env.PORT || 3000;
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-    plugins: [
-    ApolloServerPluginLandingPageLocalDefault({ embed: true }),
-  ],
+  plugins: [ApolloServerPluginLandingPageLocalDefault({ embed: true })],
 });
 
 const app = express();
@@ -38,15 +38,27 @@ const app = express();
   }
 
   app.use(express.json());
-  app.use(cors());
+  app.use(
+    cors({
+      credentials: true,
+    }),
+  );
+  app.use(cookieParser());
   app.post("/signup", signupFunction);
   app.post("/login", loginFunction);
+  app.post("/logout", (req, res) => {
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: true,
+    });
+    res.status(200).send({ message: "Logged out successfully" });
+  });
 
   app.use(
     "/graphql",
     expressMiddleware(server, {
       context: async ({ req }: { req: Request }) => {
-        let token = req.headers?.authorization || "";
+        let token = req.cookies.accessToken || "";
         let response = jwt.verify(token, process.env.JWT_SECRET);
         if (!response) {
           throw new GraphQLError("Unauthorized");
@@ -55,10 +67,10 @@ const app = express();
           user: response,
         };
       },
-    })
+    }),
   );
 })();
 
 app.listen(PORT, () =>
-  console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`)
+  console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`),
 );

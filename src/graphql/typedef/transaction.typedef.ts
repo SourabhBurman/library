@@ -28,20 +28,8 @@ export const transactionTypeDef = gql`
     quantity: Int
   }
 
-  input TransactionInput {
-    book: ID!
-    transactionType: TransactionType!
-    quantity: Int!
-  }
 
   type Query {
-    getTransactions: [Transaction!]!
-    getTransaction(id: ID!): Transaction
-  }
-
-  type Mutation {
-    createTransaction(input: [TransactionInput]!): [Transaction]!
-    updateTransaction(id: ID!, input: [TransactionInput]!): [Transaction]!
-    deleteTransaction(id: ID!): Response!
+    getTransactionsForOrder(orderId: ID!): [Transaction!]!
   }
 `;

@@ -3,8 +3,10 @@ import { Book } from "../entity/books.entity";
 import { User } from "../entity/user.entity";
 import { Role } from "../entity/role.entity";
 import { Permission } from "../entity/permission.entity";
-import { Transaction } from "../entity/transaction.entity";
-import { BookUser } from "../entity/bookUser.entity";
+import { TransactionHistory } from "../entity/transactionHistory.entity";
+import { Library } from "../entity/library.entity";
+import { LibraryBook } from "../entity/library_book.entity";
+import { Order } from "../entity/order.entity";
 
 export const DB_CONFIG: DataSourceOptions = {
   type: "postgres",
@@ -13,6 +15,6 @@ export const DB_CONFIG: DataSourceOptions = {
   password: "123456",
   database: "library",
   synchronize: true,
-  logging: true,
-  entities: [Book, User, Role, Permission, Transaction, BookUser],
+  logging: false,
+  entities: [Book, User, Role, Permission, TransactionHistory, Library, LibraryBook, Order],
 };

@@ -20,11 +20,18 @@ export const userQueries = {
       throw new Error("Failed to fetch users");
     }
   },
-  getUser: async (_, args: { id: string }) => {
+  getUser: async (_, args: { id?: string }, context: any) => {
     const { id } = args;
+    
+    // If no explicit ID is provided, and the user isn't logged in, they are unauthorized.
+    if (!id && !context?.user?.id) {
+      throw new GraphQLError("Unauthorized");
+    }
+
     try {
       const user = await userRepository.findOne({
-        where: { id },
+        where: { id: id ? id : context?.user?.id },
+        relations: ["role"],
       });
       if (!user) {
       }
@@ -40,7 +47,7 @@ export const loginFunction = async (req: Request, res: Response) => {
   try {
     const user = await userRepository.findOne({
       where: { email },
-      relations: ["role", "transactions"],
+      relations: ["role"],
     });
     if (!user) {
       return res.status(400).send({
@@ -63,6 +70,11 @@ export const loginFunction = async (req: Request, res: Response) => {
 
     var accessToken = jwt.sign({ ...rest }, process.env.JWT_SECRET, {
       expiresIn: "1d",
+    });
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: true,
     });
 
     return res.status(200).send({ ...user, accessToken });

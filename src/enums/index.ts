@@ -25,13 +25,24 @@ export enum GENDER {
 
 export enum ROLE {
   ADMIN = "Admin",
+  LIBRARY_OWNER = "Library_Owner",
   READER = "Reader",
-  AUTHOR = "Author",
 }
 
 export enum TRANSACTION_TYPE {
   BORROW = "Borrow",
   RETURN = "Return",
   PURCHASE = "Purchase",
-  PUBLISH = "Publish",
+}
+
+export enum ORDER_STATUS_ENUM {
+  BORROWED = "Borrowed",
+  RETURNED = "Returned",
+  PURCHASED = "Purchased",
+}
+
+export const ORDER_STATUS = {
+  [TRANSACTION_TYPE.BORROW]: ORDER_STATUS_ENUM.BORROWED,
+  [TRANSACTION_TYPE.RETURN]: ORDER_STATUS_ENUM.RETURNED,
+  [TRANSACTION_TYPE.PURCHASE]: ORDER_STATUS_ENUM.PURCHASED,
 }

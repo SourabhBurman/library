@@ -1,22 +1,13 @@
-import {
-  Column,
-  Entity,
-  JoinTable,
-  ManyToMany,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from "typeorm";
+import { Column, Entity, JoinTable, ManyToMany, OneToMany } from "typeorm";
+import { BaseModel } from "./base.entity";
 import { ROLE } from "../enums";
 import { Permission } from "./permission.entity";
 import { User } from "./user.entity";
 
 @Entity()
-export class Role {
-  @PrimaryGeneratedColumn()
-  id: string;
-
-  @Column({ type: "enum", enum: ROLE, default: ROLE.READER, unique: true })
-  role: ROLE;
+export class Role extends BaseModel {
+  @Column({ type: "enum", enum: ROLE, default: ROLE.READER })
+  type: ROLE;
 
   @Column({ type: "varchar", nullable: false })
   display_name: string;

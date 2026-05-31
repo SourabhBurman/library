@@ -1,12 +1,4 @@
-import { TRANSACTION_TYPE } from "../../enums";
 import { FilterInput, OperatorFields } from "./shared";
-
-export type TransactionInputType = {
-  bookId: string;
-  transactionType: TRANSACTION_TYPE;
-  quantity: number;
-  transactionDate?: Date;
-};
 
 enum BookFields {
   name = "name",
