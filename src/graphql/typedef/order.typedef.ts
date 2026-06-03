@@ -2,10 +2,10 @@ import gql from "graphql-tag";
 
 export const orderTypeDefs = gql`
 
-  type TransactionType {
-    BORROW: String
-    RETURN: String
-    PURCHASE: String
+  enum TransactionType {
+    BORROW
+    RETURN
+    PURCHASE
   }
 
   type Order {

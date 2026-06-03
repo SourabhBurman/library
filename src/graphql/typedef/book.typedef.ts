@@ -1,13 +1,13 @@
 import gql from "graphql-tag";
 
 export const bookTypeDef = gql`
-
   scalar Date
 
   enum Genre {
     Horror
     Romance
     Fantasy
+    SciFi
     Mystery
     Thriller
     Adventure
@@ -77,7 +77,7 @@ export const bookTypeDef = gql`
     id: ID
     name: String
     description: String
-    genre: Genre
+    genre: String
     quantityAvailable: Int
     cost: Float
     rentPrice: Float
