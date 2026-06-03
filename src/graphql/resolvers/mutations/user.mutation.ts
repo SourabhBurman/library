@@ -79,7 +79,7 @@ export const signupFunction = async (req: Request, res: Response) => {
       });
     }
     res.status(400).send({
-      message: "Failed to create user",
+      message: error?.message ?? "Failed to create user",
       success: false,
     });
   }

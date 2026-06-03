@@ -24,10 +24,12 @@ export class DBModle {
 
 export const userRepository = DBModle.dbInstance.getRepository(User);
 export const roleRepository = DBModle.dbInstance.getRepository(Role);
-export const permissionRepository = DBModle.dbInstance.getRepository(Permission);
-export const transactionRepository = DBModle.dbInstance.getRepository(TransactionHistory);
+export const permissionRepository =
+  DBModle.dbInstance.getRepository(Permission);
+export const transactionRepository =
+  DBModle.dbInstance.getRepository(TransactionHistory);
 export const bookRepository = DBModle.dbInstance.getRepository(Book);
 export const libraryRepository = DBModle.dbInstance.getRepository(Library);
-export const libraryBookRepository = DBModle.dbInstance.getRepository(LibraryBook);
+export const libraryBookRepository =
+  DBModle.dbInstance.getRepository(LibraryBook);
 export const orderRepository = DBModle.dbInstance.getRepository(Order);
-

@@ -7,19 +7,26 @@ import { ORDER_STATUS_ENUM } from "../enums";
 
 @Entity()
 export class Order extends BaseModel {
-    
- @Column({type: "enum", enum: ORDER_STATUS_ENUM, nullable: false, default: ORDER_STATUS_ENUM.BORROWED})
- current_status: ORDER_STATUS_ENUM;
+  @Column({
+    type: "enum",
+    enum: ORDER_STATUS_ENUM,
+    nullable: false,
+    default: ORDER_STATUS_ENUM.BORROWED,
+  })
+  current_status: ORDER_STATUS_ENUM;
 
- @Column({type: "timestamp", nullable: true})
- expectedReturnDate: Date;
+  @Column({ type: "timestamp", nullable: true })
+  expectedReturnDate: Date;
 
- @ManyToOne(()=> User, (user)=> user.orders)
- user: User;
+  @ManyToOne(() => User, (user) => user.orders)
+  user: User;
 
- @ManyToOne(()=> LibraryBook, (libraryBook)=> libraryBook.orders)
- library_book: LibraryBook;
+  @ManyToOne(() => LibraryBook, (libraryBook) => libraryBook.orders)
+  libraryBook: LibraryBook;
 
- @OneToMany(()=> TransactionHistory, (transactionHistory)=> transactionHistory.order)
- transactions: TransactionHistory[];
-}   
+  @OneToMany(
+    () => TransactionHistory,
+    (transactionHistory) => transactionHistory.order,
+  )
+  transactions: TransactionHistory[];
+}

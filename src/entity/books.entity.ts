@@ -5,7 +5,6 @@ import { LibraryBook } from "./library_book.entity";
 
 @Entity()
 export class Book extends BaseModel {
-
   @Column({ type: "varchar", nullable: false })
   name: string;
 
@@ -16,7 +15,7 @@ export class Book extends BaseModel {
   genre: BOOK_GENRE;
 
   @Column({ type: "int", default: 1 })
-  quantity_available: number;
+  quantityAvailable: number;
 
   @Column({ type: "float", nullable: true, comment: "Price in INR" })
   cost: number;
@@ -26,11 +25,11 @@ export class Book extends BaseModel {
     nullable: true,
     comment: "Price in INR for a day",
   })
-  rent_price: number;
+  rentPrice: number;
 
   @Column({ type: "date", nullable: true })
-  published_date: Date;
+  publishedDate: Date;
 
   @OneToMany(() => LibraryBook, (libraryBook) => libraryBook.book)
-  library_books: LibraryBook[];
+  libraryBooks: LibraryBook[];
 }

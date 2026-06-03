@@ -5,12 +5,12 @@ const RoleRepository = DBModle.dbInstance.getRepository(Role);
 
 export const roleMutation = {
   createRole: async (_, args: { input: Role }) => {
-    const { type, display_name, permissions } = args.input;
+    const { type, displayName, permissions } = args.input;
 
     try {
       const newRole = RoleRepository.create({
         type,
-        display_name,
+        displayName,
         permissions,
       });
 

@@ -3,13 +3,13 @@ import gql from "graphql-tag";
 export const roleTypeDef = gql`
   enum USER_ROLES {
     Admin
-    LibraryOwner
+    Library_Owner
     Reader
   }
 
   type Role {
     id: ID
-    role: USER_ROLES
+    type: USER_ROLES
     displayName: String
   }
 

@@ -1,13 +1,12 @@
 import { bookRepository, DBModle } from "../../../config/db.connection";
 import { Book } from "../../../entity/books.entity";
 
-
 export const bookMutation = {
   createBook: async (_, args: { input: Book }) => {
     try {
       const newBook = bookRepository.create({
         ...args.input,
-        published_date: new Date(),
+        publishedDate: new Date(),
       });
 
       const savedBook = await bookRepository.save(newBook);

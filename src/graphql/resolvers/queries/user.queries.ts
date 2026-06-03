@@ -22,7 +22,7 @@ export const userQueries = {
   },
   getUser: async (_, args: { id?: string }, context: any) => {
     const { id } = args;
-    
+
     // If no explicit ID is provided, and the user isn't logged in, they are unauthorized.
     if (!id && !context?.user?.id) {
       throw new GraphQLError("Unauthorized");
@@ -77,7 +77,7 @@ export const loginFunction = async (req: Request, res: Response) => {
       secure: true,
     });
 
-    return res.status(200).send({ ...user, accessToken });
+    return res.status(200).send({ accessToken });
   } catch (error) {
     console.error("Error logging in:", error);
     return res.status(400).send({

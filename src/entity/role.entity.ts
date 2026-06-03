@@ -10,7 +10,7 @@ export class Role extends BaseModel {
   type: ROLE;
 
   @Column({ type: "varchar", nullable: false })
-  display_name: string;
+  displayName: string;
 
   @OneToMany(() => User, (user) => user.role)
   users: User[];

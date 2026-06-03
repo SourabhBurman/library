@@ -16,5 +16,14 @@ export const DB_CONFIG: DataSourceOptions = {
   database: "library",
   synchronize: true,
   logging: false,
-  entities: [Book, User, Role, Permission, TransactionHistory, Library, LibraryBook, Order],
+  entities: [
+    Book,
+    User,
+    Role,
+    Permission,
+    TransactionHistory,
+    Library,
+    LibraryBook,
+    Order,
+  ],
 };

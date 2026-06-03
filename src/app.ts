@@ -41,12 +41,13 @@ const app = express();
   app.use(
     cors({
       credentials: true,
+      origin: "http://localhost:3000",
     }),
   );
   app.use(cookieParser());
   app.post("/signup", signupFunction);
   app.post("/login", loginFunction);
-  app.post("/logout", (req, res) => {
+  app.post("/logout", (_, res) => {
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: true,
@@ -58,8 +59,15 @@ const app = express();
     "/graphql",
     expressMiddleware(server, {
       context: async ({ req }: { req: Request }) => {
+        if (
+          req.body?.query?.includes("__schema") ||
+          req.body?.operationName === "IntrospectionQuery"
+        ) {
+          return {};
+        }
         let token = req.cookies.accessToken || "";
-        let response = jwt.verify(token, process.env.JWT_SECRET);
+        if (!token) throw new GraphQLError("Unauthorized");
+        let response = jwt.verify(token, process.env.JWT_SECRET as string);
         if (!response) {
           throw new GraphQLError("Unauthorized");
         }
