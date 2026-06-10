@@ -8,7 +8,6 @@ import {
 } from "typeorm";
 import { BaseModel } from "./base.entity";
 import { User } from "./user.entity";
-import { TransactionHistory } from "./transactionHistory.entity";
 import { LibraryBook } from "./library_book.entity";
 
 @Entity()

@@ -5,10 +5,20 @@ export const libraryBookTypeDefs = gql(`
         success: Boolean
         message: String
     }
+    input BookQuantityInput {
+        bookId: ID!
+        quantity: Int!
+    }
+    input LibraryBookInput {
+        books: [BookQuantityInput!]
+        library: ID!
+        isAll: Boolean
+        quantityForIsAll: Int
+    }
     type Query {
         getBooksByLibrary(id: ID!): [Book!]!
     }
     type Mutation {
-        addBookToLibrary(id: ID!, input: LibraryInput!): Response
+        addBookToLibrary(input: LibraryBookInput!): Response
     }
 `);

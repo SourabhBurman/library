@@ -12,7 +12,7 @@ export const userQueries = {
   getUsers: async () => {
     try {
       const users = await userRepository.find({
-        relations: ["role", "transactions"],
+        relations: ["role", "transactions", "library_owned"],
       });
       return users;
     } catch (error) {
@@ -31,7 +31,7 @@ export const userQueries = {
     try {
       const user = await userRepository.findOne({
         where: { id: id ? id : context?.user?.id },
-        relations: ["role"],
+        relations: ["role", "library_owned"],
       });
       if (!user) {
       }

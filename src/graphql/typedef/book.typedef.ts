@@ -82,6 +82,8 @@ export const bookTypeDef = gql`
     cost: Float
     rentPrice: Float
     publishedDate: Date
+    coverImage: String
+    author: String
   }
 
   type Query {

@@ -29,6 +29,7 @@ export const UserTypeDef = gql`
     accessToken: String
     refreshToken: String
     balance: Float
+    library_owned: Library
   }
 
   type Query {

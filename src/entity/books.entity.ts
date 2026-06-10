@@ -11,6 +11,12 @@ export class Book extends BaseModel {
   @Column({ type: "varchar" })
   description: string;
 
+  @Column({ type: "varchar", default: "" })
+  coverImage: string;
+
+  @Column({ type: "varchar", default: "" })
+  author: string;
+
   @Column({ type: "enum", enum: BOOK_GENRE, default: BOOK_GENRE.OTHER })
   genre: BOOK_GENRE;
 
