@@ -13,6 +13,8 @@ import { libraryQueries } from "./queries/library.queries";
 import { libraryBookQueries } from "./queries/library_book.queries";
 import { libraryBookMutation } from "./mutations/libray_book.mutation";
 
+import { orderQueries } from "./queries/order.queries";
+
 export const resolvers = {
   Query: {
     ...bookQueries,
@@ -22,6 +24,7 @@ export const resolvers = {
     ...transactionQueries,
     ...libraryQueries,
     ...libraryBookQueries,
+    ...orderQueries,
   },
   Mutation: {
     ...bookMutation,

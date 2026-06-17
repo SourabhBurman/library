@@ -20,12 +20,14 @@ export const transactionTypeDef = gql`
 
   type Transaction {
     id: ID
-    user: ReturnUser
-    book: Book
+    order: Order
     transactionType: TransactionType
     transactionDate: Date
-    dueDate: Date
-    quantity: Int
+    amount: Int
+    paymentStatus: String
+    razorpayOrderId: String
+    razorpayPaymentId: String
+    createdAt: Date
   }
 
 

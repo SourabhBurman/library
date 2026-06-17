@@ -6,14 +6,15 @@ import cors from "cors";
 import { typeDefs } from "./graphql/typedef";
 import { resolvers } from "./graphql/resolvers";
 import { DBModle } from "./config/db.connection";
-import { Request } from "express";
+import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { GraphQLError } from "graphql";
 import { loginFunction } from "./graphql/resolvers/queries/user.queries";
 import { signupFunction } from "./graphql/resolvers/mutations/user.mutation";
 import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin/landingPage/default";
-import { seedBooks } from "./seed-books";
 import cookieParser from "cookie-parser";
+import { razorpayWebhookFunction } from "./controllers/razorpayWebhook";
+import { startCronJobs } from "./jobs/cronJobs";
 
 const PORT = process.env.PORT || 3000;
 
@@ -28,6 +29,7 @@ const app = express();
 (async () => {
   try {
     await DBModle.connect();
+    startCronJobs();
   } catch (error) {
     console.error("Error connecting to the database", error);
   }
@@ -45,6 +47,8 @@ const app = express();
     }),
   );
   app.use(cookieParser());
+  
+  app.post("/webhooks/razorpay", razorpayWebhookFunction);
   app.post("/signup", signupFunction);
   app.post("/login", loginFunction);
   app.post("/logout", (_, res) => {
@@ -58,7 +62,7 @@ const app = express();
   app.use(
     "/graphql",
     expressMiddleware(server, {
-      context: async ({ req }: { req: Request }) => {
+      context: async ({ req, res }: { req: Request; res: Response }) => {
         if (
           req.body?.query?.includes("__schema") ||
           req.body?.operationName === "IntrospectionQuery"
@@ -66,14 +70,25 @@ const app = express();
           return {};
         }
         let token = req.cookies.accessToken || "";
-        if (!token) throw new GraphQLError("Unauthorized");
-        let response = jwt.verify(token, process.env.JWT_SECRET as string);
-        if (!response) {
-          throw new GraphQLError("Unauthorized");
+        if (!token) {
+          throw new GraphQLError("Unauthorized", {
+            extensions: { code: "UNAUTHENTICATED" },
+          });
         }
-        return {
-          user: response,
-        };
+        try {
+          let response = jwt.verify(token, process.env.JWT_SECRET as string);
+          return {
+            user: response,
+          };
+        } catch (error) {
+          res.clearCookie("accessToken", {
+            httpOnly: true,
+            secure: true,
+          });
+          throw new GraphQLError("Unauthorized: Token expired or invalid", {
+            extensions: { code: "UNAUTHENTICATED" },
+          });
+        }
       },
     }),
   );

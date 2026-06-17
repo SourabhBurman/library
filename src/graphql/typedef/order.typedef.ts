@@ -1,13 +1,21 @@
 import gql from "graphql-tag";
 
 export const orderTypeDefs = gql`
+  enum OrderStatus {
+    Borrowed
+    Returned
+    Purchased
+  }
+
   type Order {
     id: ID
-    user: User
     book: Book
-    transactionType: TransactionType
-    transactionDate: Date
+    library: Library
+    transactions: [Transaction]
+    current_status: OrderStatus
     expectedReturnDate: Date
+    createdAt: Date
+    updatedAt: Date
   }
 
   input PlaceOrderInput {
@@ -23,6 +31,12 @@ export const orderTypeDefs = gql`
     expectedReturnDate: Date
   }
 
+  type PaymentIntentResponse {
+    razorpayOrderId: String!
+    amount: Int!
+    currency: String!
+  }
+
   type Query {
     getOrders: [Order!]!
     getOrder(id: ID!): Order
@@ -31,5 +45,6 @@ export const orderTypeDefs = gql`
   type Mutation {
     placeOrder(input: [PlaceOrderInput]!): [Order]!
     returnOrder(input: [UpdateOrderInput]!): [Order]!
+    createPaymentIntent(input: PlaceOrderInput!): PaymentIntentResponse!
   }
 `;
