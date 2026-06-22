@@ -25,8 +25,7 @@ export const transactionTypeDef = gql`
     transactionDate: Date
     amount: Int
     paymentStatus: String
-    razorpayOrderId: String
-    razorpayPaymentId: String
+    stripePaymentIntentId: String
     createdAt: Date
   }
 

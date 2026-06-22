@@ -13,7 +13,7 @@ import { loginFunction } from "./graphql/resolvers/queries/user.queries";
 import { signupFunction } from "./graphql/resolvers/mutations/user.mutation";
 import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin/landingPage/default";
 import cookieParser from "cookie-parser";
-import { razorpayWebhookFunction } from "./controllers/razorpayWebhook";
+import { stripeWebhookFunction } from "./controllers/stripeWebhook";
 import { startCronJobs } from "./jobs/cronJobs";
 
 const PORT = process.env.PORT || 3000;
@@ -39,6 +39,8 @@ const app = express();
     console.error("Error connecting to the server", error);
   }
 
+  app.post("/webhooks/stripe", express.raw({ type: "application/json" }), stripeWebhookFunction);
+
   app.use(express.json());
   app.use(
     cors({
@@ -47,8 +49,7 @@ const app = express();
     }),
   );
   app.use(cookieParser());
-  
-  app.post("/webhooks/razorpay", razorpayWebhookFunction);
+
   app.post("/signup", signupFunction);
   app.post("/login", loginFunction);
   app.post("/logout", (_, res) => {

@@ -19,8 +19,8 @@ export const orderTypeDefs = gql`
   }
 
   input PlaceOrderInput {
-    book: ID!
-    library: ID!
+    bookId: ID!
+    libraryId: ID!
     transactionType: TransactionType!
     expectedReturnDate: Date
   }
@@ -32,7 +32,7 @@ export const orderTypeDefs = gql`
   }
 
   type PaymentIntentResponse {
-    razorpayOrderId: String!
+    clientSecret: String!
     amount: Int!
     currency: String!
   }
@@ -43,7 +43,6 @@ export const orderTypeDefs = gql`
   }
 
   type Mutation {
-    placeOrder(input: [PlaceOrderInput]!): [Order]!
     returnOrder(input: [UpdateOrderInput]!): [Order]!
     createPaymentIntent(input: PlaceOrderInput!): PaymentIntentResponse!
   }

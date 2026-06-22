@@ -13,13 +13,10 @@ import { Order } from "../../../entity/order.entity";
 import { PlaceOrderInputType, ReturnOrder } from "../../interfaces/order.type";
 import { Book } from "../../../entity/books.entity";
 import { PENALTY_PERCENT, SECURITY_PERCENT } from "../../../util/constant";
-import Razorpay from "razorpay";
+import Stripe from "stripe";
 import { PAYMENT_STATUS } from "../../../enums";
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_dummy",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "dummy_secret",
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 /**
  * Shared helper function to validate order prerequisites.
@@ -32,6 +29,7 @@ const validateAndCalculateOrderDetails = async (
   bookId: string,
   transactionType: string,
   userId: string,
+  expectedReturnDate?: string | Date,
 ) => {
   const selectedLibrary = await queryRunner.manager.findOneBy(Library, {
     id: libraryId,
@@ -58,13 +56,31 @@ const validateAndCalculateOrderDetails = async (
   }
 
   const GET_AMOUNT = {
-    [TRANSACTION_TYPE.PURCHASE]: bookDetail.cost,
-    [TRANSACTION_TYPE.BORROW]: bookDetail.rentPrice,
+    [TRANSACTION_TYPE.PURCHASE]: bookDetail.cost || 0,
+    [TRANSACTION_TYPE.BORROW]: bookDetail.rentPrice || 0,
   };
 
   let amount = GET_AMOUNT[transactionType as TRANSACTION_TYPE];
   if (transactionType === TRANSACTION_TYPE.BORROW) {
-    amount += SECURITY_PERCENT * GET_AMOUNT[TRANSACTION_TYPE.PURCHASE];
+    let borrowDays = 1;
+    if (expectedReturnDate) {
+      const returnDate = new Date(expectedReturnDate);
+      const today = new Date();
+      // Reset hours to correctly calculate full days
+      today.setHours(0, 0, 0, 0);
+      returnDate.setHours(0, 0, 0, 0);
+
+      const diffTime = returnDate.getTime() - today.getTime();
+      borrowDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (borrowDays <= 0) {
+        throw new GraphQLError("Return date must be in the future");
+      }
+    }
+
+    amount =
+      borrowDays * GET_AMOUNT[TRANSACTION_TYPE.BORROW] +
+      SECURITY_PERCENT * GET_AMOUNT[TRANSACTION_TYPE.PURCHASE];
   }
 
   return {
@@ -77,84 +93,6 @@ const validateAndCalculateOrderDetails = async (
 };
 
 export const orderMutation = {
-  /**
-   * Legacy/Direct Order Flow:
-   * Acts as an instant checkout. Deducts the amount directly from the user's internal wallet balance,
-   * immediately creates a PAID order, and instantly decreases the library book's available quantity.
-   */
-  placeOrder: async (
-    _,
-    { input }: { input: PlaceOrderInputType[] },
-    context: any,
-  ) => {
-    // for now we are only supporting single order
-    const obj = input?.[0];
-
-    let { bookId, libraryId, transactionType } = obj;
-
-    const queryRunner = DBModle.dbInstance.createQueryRunner();
-
-    await queryRunner.startTransaction();
-    try {
-      const { selectedLibrary, libraryBookDetail, currentUser, amount } =
-        await validateAndCalculateOrderDetails(
-          queryRunner,
-          libraryId,
-          bookId,
-          transactionType,
-          context.user?.id,
-        );
-
-      if (currentUser.balance < amount) {
-        throw new GraphQLError("Insufficient balance");
-      }
-
-      const newOrder = queryRunner.manager.create(Order, {
-        current_status: ORDER_STATUS[transactionType],
-        user: currentUser,
-        libraryBook: libraryBookDetail,
-      });
-
-      const savedOrder = await queryRunner.manager.save(newOrder);
-
-      // update book quantity in that particular library
-      await queryRunner.manager.update(LibraryBook, libraryBookDetail.id, {
-        quantityAvailable: libraryBookDetail.quantityAvailable - 1,
-      });
-
-      // update user balance
-      await queryRunner.manager.update(User, currentUser.id, {
-        balance: currentUser.balance - amount,
-      });
-
-      // update library balance
-      await queryRunner.manager.update(Library, selectedLibrary.id, {
-        balance: (selectedLibrary.balance ?? 0) + amount,
-      });
-
-      // create and save transaction
-
-      const newTransaction = queryRunner.manager.create(TransactionHistory, {
-        order: newOrder,
-        transactionType: transactionType as TRANSACTION_TYPE,
-        amount: Math.round(amount * 100),
-        paymentStatus: PAYMENT_STATUS.PAID,
-      });
-
-      await queryRunner.manager.save(TransactionHistory, newTransaction);
-
-      await queryRunner.commitTransaction();
-      return [savedOrder];
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      if (error instanceof GraphQLError) {
-        throw error;
-      }
-      throw new GraphQLError("Failed to create transaction");
-    } finally {
-      await queryRunner.release();
-    }
-  },
   returnOrder: async (_, { input }: { input: ReturnOrder[] }, context: any) => {
     // for now we are only supporting single order
     const obj = input?.[0];
@@ -283,7 +221,7 @@ export const orderMutation = {
     { input }: { input: PlaceOrderInputType },
     context: any,
   ) => {
-    let { bookId, libraryId, transactionType } = input;
+    let { bookId, libraryId, transactionType, expectedReturnDate } = input;
 
     const queryRunner = DBModle.dbInstance.createQueryRunner();
     await queryRunner.startTransaction();
@@ -295,22 +233,28 @@ export const orderMutation = {
           bookId,
           transactionType,
           context.user?.id,
+          expectedReturnDate,
         );
 
       // amount is in INR, multiply by 100 for paise
       const amountInPaise = Math.round(amount * 100);
 
-      // Create Razorpay Order
-      const rzpOrder = await razorpay.orders.create({
+      // Create Stripe PaymentIntent
+      const paymentIntent = await stripe.paymentIntents.create({
         amount: amountInPaise,
-        currency: "INR",
-        receipt: `receipt_order_${Date.now()}`,
+        currency: "inr",
+        metadata: {
+          receipt: `receipt_order_${Date.now()}`,
+        },
       });
 
       const newOrder = queryRunner.manager.create(Order, {
         current_status: ORDER_STATUS[transactionType],
         user: currentUser,
         libraryBook: libraryBookDetail,
+        expectedReturnDate: expectedReturnDate
+          ? new Date(expectedReturnDate)
+          : undefined,
       });
 
       await queryRunner.manager.save(newOrder);
@@ -320,19 +264,20 @@ export const orderMutation = {
         transactionType: transactionType as TRANSACTION_TYPE,
         amount: amountInPaise,
         paymentStatus: PAYMENT_STATUS.PENDING,
-        razorpayOrderId: rzpOrder.id,
+        stripePaymentIntentId: paymentIntent.id,
       });
 
       await queryRunner.manager.save(TransactionHistory, newTransaction);
       await queryRunner.commitTransaction();
 
       return {
-        razorpayOrderId: rzpOrder.id,
+        clientSecret: paymentIntent.client_secret,
         amount: amountInPaise,
         currency: "INR",
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
+      console.error("Payment intent creation error:", error);
       if (error instanceof GraphQLError) throw error;
       throw new GraphQLError("Failed to create payment intent");
     } finally {

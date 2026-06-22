@@ -27,10 +27,7 @@ export class TransactionHistory extends BaseModel {
   paymentStatus: PAYMENT_STATUS;
 
   @Column({ type: "varchar", nullable: true })
-  razorpayOrderId: string | null;
-
-  @Column({ type: "varchar", nullable: true })
-  razorpayPaymentId: string | null;
+  stripePaymentIntentId: string | null;
 
   @ManyToOne(() => Order, (order) => order.transactions)
   order: Order;
