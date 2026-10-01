@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // The simplest, most reliable option: VS Code runs ts-node directly
+      // under the debugger — no nodemon, no attaching to a child process,
+      // nothing to misconfigure. Use this one first. Downside: no
+      // hot-reload — stop and re-run this after each code change.
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Backend (standalone)",
+      "program": "${workspaceFolder}/src/app.ts",
+      "runtimeArgs": ["-r", "ts-node/register"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      // Keeps nodemon's hot-reload while debugging — pair with the
+      // "start:debug" npm script (adds --inspect). Start that script in a
+      // terminal FIRST, then run this "Attach" config to connect to it.
+      // VS Code auto-reconnects when nodemon restarts the process.
+      "type": "node",
+      "request": "attach",
+      "name": "Attach to Backend (nodemon)",
+      "port": 9229,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    }
+  ]
+}
