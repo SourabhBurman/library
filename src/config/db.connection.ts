@@ -8,6 +8,11 @@ import { Role } from "../entity/role.entity";
 import { TransactionHistory } from "../entity/transactionHistory.entity";
 import { LibraryBook } from "../entity/library_book.entity";
 import { Order } from "../entity/order.entity";
+import { Notification } from "../entity/notification.entity";
+import { Review } from "../entity/review.entity";
+import { SavedBook } from "../entity/savedBook.entity";
+import { Waitlist } from "../entity/waitlist.entity";
+import { AuditLog } from "../entity/auditLog.entity";
 
 export class DBModle {
   public static readonly dbInstance = new DataSource(DB_CONFIG);
@@ -33,3 +38,9 @@ export const libraryRepository = DBModle.dbInstance.getRepository(Library);
 export const libraryBookRepository =
   DBModle.dbInstance.getRepository(LibraryBook);
 export const orderRepository = DBModle.dbInstance.getRepository(Order);
+export const notificationRepository =
+  DBModle.dbInstance.getRepository(Notification);
+export const reviewRepository = DBModle.dbInstance.getRepository(Review);
+export const savedBookRepository = DBModle.dbInstance.getRepository(SavedBook);
+export const waitlistRepository = DBModle.dbInstance.getRepository(Waitlist);
+export const auditLogRepository = DBModle.dbInstance.getRepository(AuditLog);
