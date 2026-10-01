@@ -29,6 +29,12 @@ export class User extends BaseModel {
   @Column({ type: "float", default: 0, comment: "Balance in INR" })
   balance: number;
 
+  @Column({ type: "varchar", nullable: true })
+  refreshTokenHash: string | null;
+
+  @Column({ type: "timestamp", nullable: true })
+  refreshTokenExpiresAt: Date | null;
+
   @ManyToOne(() => Role, (role) => role.users)
   role: Role;
 

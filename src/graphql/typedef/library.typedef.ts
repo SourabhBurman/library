@@ -5,7 +5,7 @@ export const libraryTypeDefs = gql(`
         id: ID
         name: String
         address: String
-        balance: Int
+        balance: Float
     }
 
     input LibraryInput {

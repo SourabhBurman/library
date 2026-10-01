@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, Index, ManyToOne, OneToMany } from "typeorm";
 import { BaseModel } from "./base.entity";
 import { User } from "./user.entity";
 import { LibraryBook } from "./library_book.entity";
@@ -7,6 +7,10 @@ import { ORDER_STATUS_ENUM } from "../enums";
 
 @Entity()
 export class Order extends BaseModel {
+  // Indexed: the cron jobs and order-lookup queries filter on this column
+  // constantly (e.g. "all Borrowed orders"), and it was doing a full table
+  // scan without one.
+  @Index()
   @Column({
     type: "enum",
     enum: ORDER_STATUS_ENUM,

@@ -5,12 +5,14 @@ export const orderTypeDefs = gql`
     Borrowed
     Returned
     Purchased
+    Cancelled
   }
 
   type Order {
     id: ID
     book: Book
     library: Library
+    user: User
     transactions: [Transaction]
     current_status: OrderStatus
     expectedReturnDate: Date
@@ -40,6 +42,8 @@ export const orderTypeDefs = gql`
   type Query {
     getOrders: [Order!]!
     getOrder(id: ID!): Order
+    "Orders placed against the library owned by the current user"
+    getLibraryOrders: [Order!]!
   }
 
   type Mutation {

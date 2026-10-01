@@ -39,6 +39,14 @@ export enum ORDER_STATUS_ENUM {
   BORROWED = "Borrowed",
   RETURNED = "Returned",
   PURCHASED = "Purchased",
+  CANCELLED = "Cancelled",
+}
+
+export enum NOTIFICATION_TYPE {
+  DUE_SOON = "DueSoon",
+  OVERDUE = "Overdue",
+  ORDER_UPDATE = "OrderUpdate",
+  GENERAL = "General",
 }
 
 export const ORDER_STATUS = {

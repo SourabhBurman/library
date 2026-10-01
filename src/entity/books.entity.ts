@@ -2,13 +2,14 @@ import { Column, Entity, OneToMany } from "typeorm";
 import { BaseModel } from "./base.entity";
 import { BOOK_GENRE } from "../enums";
 import { LibraryBook } from "./library_book.entity";
+import { Review } from "./review.entity";
 
 @Entity()
 export class Book extends BaseModel {
   @Column({ type: "varchar", nullable: false })
   name: string;
 
-  @Column({ type: "varchar" })
+  @Column({ type: "varchar", default: "" })
   description: string;
 
   @Column({ type: "varchar", default: "" })
@@ -38,4 +39,7 @@ export class Book extends BaseModel {
 
   @OneToMany(() => LibraryBook, (libraryBook) => libraryBook.book)
   libraryBooks: LibraryBook[];
+
+  @OneToMany(() => Review, (review) => review.book)
+  reviews: Review[];
 }

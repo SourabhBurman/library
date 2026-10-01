@@ -8,7 +8,7 @@ export type PlaceOrderInputType = {
 }
 
 export type ReturnOrder = {
-    orderId: string;
+    id: string;
 }
 
 export type UpdateOrderInputType = {

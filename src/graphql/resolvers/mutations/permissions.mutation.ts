@@ -1,11 +1,14 @@
 import { GraphQLError } from "graphql";
 import { DBModle } from "../../../config/db.connection";
 import { Permission } from "../../../entity/permission.entity";
+import { ROLE } from "../../../enums";
+import { requireRole } from "../../../util/auth";
 
 const permissionRepository = DBModle.dbInstance.getRepository(Permission);
 
 export const permissionMutation = {
-  createPermission: async (_, { input }) => {
+  createPermission: async (_, { input }, context: any) => {
+    requireRole(context, ROLE.ADMIN);
     const { name, description } = input;
     try {
       const newPermission = permissionRepository.create({
@@ -20,7 +23,8 @@ export const permissionMutation = {
     }
   },
 
-  updatePermission: async (_, { id, input }) => {
+  updatePermission: async (_, { id, input }, context: any) => {
+    requireRole(context, ROLE.ADMIN);
     const { name, description } = input;
     try {
       const permissionToUpdate = await permissionRepository.findOne({
@@ -43,7 +47,8 @@ export const permissionMutation = {
     }
   },
 
-  deletePermission: async (_, { id }) => {
+  deletePermission: async (_, { id }, context: any) => {
+    requireRole(context, ROLE.ADMIN);
     try {
       const permissionToDelete = await permissionRepository.findOne({
         where: { id },

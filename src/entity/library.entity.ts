@@ -22,7 +22,11 @@ export class Library extends BaseModel {
   @Column({ type: "int", nullable: true })
   rating: number;
 
-  @Column({ type: "int", default: 0 })
+  // Rupees, not paise — and must be a float: order amounts routinely include
+  // fractional rupees (e.g. a 50% security deposit on an odd-cost book), and
+  // an int column here rejects those writes (confirmed via the Stripe
+  // webhook, which failed on every non-whole-rupee payment before this fix).
+  @Column({ type: "float", default: 0 })
   balance: number;
 
   @OneToOne(() => User, (user) => user.library_owned)

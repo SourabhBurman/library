@@ -12,9 +12,15 @@ import { LibraryBook } from "../../../entity/library_book.entity";
 import { Order } from "../../../entity/order.entity";
 import { PlaceOrderInputType, ReturnOrder } from "../../interfaces/order.type";
 import { Book } from "../../../entity/books.entity";
-import { PENALTY_PERCENT, SECURITY_PERCENT } from "../../../util/constant";
 import Stripe from "stripe";
 import { PAYMENT_STATUS } from "../../../enums";
+import { requireAuth } from "../../../util/auth";
+import { publishWaitlistCheck } from "../../../util/waitlist";
+import {
+  calculateBorrowDays,
+  calculateOrderAmount,
+  calculateReturnRefund,
+} from "../../../util/pricing";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -55,32 +61,22 @@ const validateAndCalculateOrderDetails = async (
     throw new GraphQLError("Insufficient quantities available in this library");
   }
 
-  const GET_AMOUNT = {
-    [TRANSACTION_TYPE.PURCHASE]: bookDetail.cost || 0,
-    [TRANSACTION_TYPE.BORROW]: bookDetail.rentPrice || 0,
-  };
-
-  let amount = GET_AMOUNT[transactionType as TRANSACTION_TYPE];
-  if (transactionType === TRANSACTION_TYPE.BORROW) {
-    let borrowDays = 1;
-    if (expectedReturnDate) {
-      const returnDate = new Date(expectedReturnDate);
-      const today = new Date();
-      // Reset hours to correctly calculate full days
-      today.setHours(0, 0, 0, 0);
-      returnDate.setHours(0, 0, 0, 0);
-
-      const diffTime = returnDate.getTime() - today.getTime();
-      borrowDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      if (borrowDays <= 0) {
-        throw new GraphQLError("Return date must be in the future");
-      }
+  let borrowDays = 1;
+  let amount: number;
+  try {
+    if (transactionType === TRANSACTION_TYPE.BORROW) {
+      borrowDays = calculateBorrowDays(expectedReturnDate);
     }
-
-    amount =
-      borrowDays * GET_AMOUNT[TRANSACTION_TYPE.BORROW] +
-      SECURITY_PERCENT * GET_AMOUNT[TRANSACTION_TYPE.PURCHASE];
+    amount = calculateOrderAmount({
+      transactionType: transactionType as TRANSACTION_TYPE,
+      cost: bookDetail.cost || 0,
+      rentPrice: bookDetail.rentPrice || 0,
+      borrowDays,
+    });
+  } catch (error) {
+    // calculateBorrowDays throws a plain Error (it has no GraphQL
+    // dependency, by design) — translate it at this boundary.
+    throw new GraphQLError(error.message);
   }
 
   return {
@@ -94,10 +90,11 @@ const validateAndCalculateOrderDetails = async (
 
 export const orderMutation = {
   returnOrder: async (_, { input }: { input: ReturnOrder[] }, context: any) => {
+    requireAuth(context);
     // for now we are only supporting single order
     const obj = input?.[0];
 
-    let orderId = obj?.orderId;
+    let orderId = obj?.id;
 
     const queryRunner = DBModle.dbInstance.createQueryRunner();
 
@@ -143,33 +140,19 @@ export const orderMutation = {
         throw new GraphQLError("Book not found in library");
       }
 
-      const refundAmount = 0.5 * (bookDetail.cost || 0);
-      let extraDays = 0;
-      const today = new Date();
-      if (
-        orderDetail.expectedReturnDate &&
-        today.getTime() > orderDetail.expectedReturnDate.getTime()
-      ) {
-        const diffTime =
-          today.getTime() - orderDetail.expectedReturnDate.getTime();
-        extraDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      }
-
-      const penalty =
-        extraDays * (PENALTY_PERCENT * (bookDetail.rentPrice || 0));
-      const finalRefundAmount = refundAmount - penalty;
+      const { finalRefundAmount } = calculateReturnRefund({
+        cost: bookDetail.cost || 0,
+        rentPrice: bookDetail.rentPrice || 0,
+        expectedReturnDate: orderDetail.expectedReturnDate,
+      });
 
       if (currentUser.balance + finalRefundAmount < 0) {
         throw new GraphQLError("Insufficient balance to cover late penalties");
       }
 
-      const savedOrder = await queryRunner.manager.update(
-        Order,
-        orderDetail.id,
-        {
-          current_status: ORDER_STATUS_ENUM.RETURNED,
-        },
-      );
+      await queryRunner.manager.update(Order, orderDetail.id, {
+        current_status: ORDER_STATUS_ENUM.RETURNED,
+      });
 
       // update book quantity in that particular library
       await queryRunner.manager.update(LibraryBook, libraryBookDetail.id, {
@@ -198,7 +181,21 @@ export const orderMutation = {
       await queryRunner.manager.save(TransactionHistory, newTransaction);
 
       await queryRunner.commitTransaction();
-      return [savedOrder];
+
+      await publishWaitlistCheck(bookDetail.id);
+
+      const updatedOrder = await DBModle.dbInstance.manager.findOne(Order, {
+        where: { id: orderDetail.id },
+        relations: [
+          "libraryBook",
+          "libraryBook.book",
+          "libraryBook.library",
+          "user",
+          "transactions",
+        ],
+      });
+
+      return [updatedOrder];
     } catch (error) {
       await queryRunner.rollbackTransaction();
       if (error instanceof GraphQLError) {
@@ -210,17 +207,19 @@ export const orderMutation = {
     }
   },
   /**
-   * Razorpay Checkout Flow (Step 1):
-   * Validates order details and calls the Razorpay API to generate a pending order ID.
-   * Saves a PENDING order in the database.
-   * IMPORTANT: Does NOT decrease library book inventory here. Inventory should be updated
-   * in the Razorpay Webhook when payment is officially captured.
+   * Stripe Checkout Flow (Step 1):
+   * Validates order details and creates a Stripe PaymentIntent, returning its
+   * client secret for the frontend to confirm payment with.
+   * Saves a PENDING transaction (and an optimistic Order) in the database.
+   * IMPORTANT: Does NOT decrease library book inventory here. Inventory is
+   * only updated in the Stripe webhook once payment is officially captured.
    */
   createPaymentIntent: async (
     _,
     { input }: { input: PlaceOrderInputType },
     context: any,
   ) => {
+    requireAuth(context);
     let { bookId, libraryId, transactionType, expectedReturnDate } = input;
 
     const queryRunner = DBModle.dbInstance.createQueryRunner();

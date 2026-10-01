@@ -4,7 +4,9 @@ import { DBModle } from "../config/db.connection";
 import { LibraryBook } from "../entity/library_book.entity";
 import { Library } from "../entity/library.entity";
 import { TransactionHistory } from "../entity/transactionHistory.entity";
-import { PAYMENT_STATUS } from "../enums";
+import { Order } from "../entity/order.entity";
+import { Notification } from "../entity/notification.entity";
+import { PAYMENT_STATUS, ORDER_STATUS_ENUM, NOTIFICATION_TYPE } from "../enums";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_dummy");
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_test_dummy";
@@ -43,6 +45,7 @@ export const stripeWebhookFunction = async (req: Request, res: Response) => {
               "order",
               "order.libraryBook",
               "order.libraryBook.library",
+              "order.libraryBook.book",
               "order.user",
             ],
           },
@@ -71,6 +74,15 @@ export const stripeWebhookFunction = async (req: Request, res: Response) => {
           balance: (selectedLibrary.balance ?? 0) + amountInRupees,
         });
 
+        await queryRunner.manager.save(Notification, {
+          type: NOTIFICATION_TYPE.ORDER_UPDATE,
+          message: `Your order for "${
+            order.libraryBook?.book?.name ?? "a book"
+          }" was confirmed.`,
+          user: order.user,
+          order,
+        });
+
         await queryRunner.commitTransaction();
       } catch (error) {
         await queryRunner.rollbackTransaction();
@@ -90,6 +102,7 @@ export const stripeWebhookFunction = async (req: Request, res: Response) => {
           TransactionHistory,
           {
             where: { stripePaymentIntentId },
+            relations: ["order", "order.user"],
           },
         );
 
@@ -99,6 +112,28 @@ export const stripeWebhookFunction = async (req: Request, res: Response) => {
             TransactionHistory,
             transaction,
           );
+
+          // The order was created optimistically before payment confirmation
+          // (see createPaymentIntent) — since payment never went through,
+          // it should never sit permanently in Borrowed/Purchased. No
+          // inventory rollback is needed: quantity is only ever decremented
+          // on the *success* webhook, never at creation time.
+          if (
+            transaction.order &&
+            transaction.order.current_status !== ORDER_STATUS_ENUM.CANCELLED
+          ) {
+            await DBModle.dbInstance.manager.update(
+              Order,
+              transaction.order.id,
+              { current_status: ORDER_STATUS_ENUM.CANCELLED },
+            );
+            await DBModle.dbInstance.manager.save(Notification, {
+              type: NOTIFICATION_TYPE.ORDER_UPDATE,
+              message: "Your payment failed and the order was cancelled.",
+              user: transaction.order.user,
+              order: transaction.order,
+            });
+          }
         }
       } catch (error) {
         console.error(

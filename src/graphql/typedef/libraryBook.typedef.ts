@@ -15,10 +15,23 @@ export const libraryBookTypeDefs = gql(`
         isAll: Boolean
         quantityForIsAll: Int
     }
+    input UpdateLibraryBookInput {
+        totalQuantities: Int
+        quantityAvailable: Int
+    }
+    "A book as stocked by one specific library — its own copy counts, distinct from the shared catalog Book.quantityAvailable"
+    type LibraryBook {
+        id: ID
+        totalQuantities: Int
+        quantityAvailable: Int
+        book: Book
+        library: Library
+    }
     type Query {
-        getBooksByLibrary(id: ID!): [Book!]!
+        getBooksByLibrary(id: ID!): [LibraryBook!]!
     }
     type Mutation {
         addBookToLibrary(input: LibraryBookInput!): Response
+        updateLibraryBook(id: ID!, input: UpdateLibraryBookInput!): LibraryBook
     }
 `);

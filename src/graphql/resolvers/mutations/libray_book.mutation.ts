@@ -9,10 +9,34 @@ import { LibraryBookInputType } from "../../interfaces/libraryBook.type";
 import { LibraryBook } from "../../../entity/library_book.entity";
 import { Book } from "../../../entity/books.entity";
 import { Library } from "../../../entity/library.entity";
+import { ROLE } from "../../../enums";
+import { publishWaitlistCheck } from "../../../util/waitlist";
 
 export const libraryBookMutation = {
   // to add book to library, only library owner is authorized to add books to library
-  addBookToLibrary: async (_, { input }: { input: LibraryBookInputType }) => {
+  addBookToLibrary: async (
+    _,
+    { input }: { input: LibraryBookInputType },
+    context: any,
+  ) => {
+    // Checked up front (outside the transaction below) so an unauthorized
+    // caller can't even acquire the row lock further down.
+    const targetLibrary = await libraryRepository.findOne({
+      where: { id: input.library },
+      relations: ["owner"],
+    });
+    if (!targetLibrary) {
+      throw new GraphQLError("Library not found");
+    }
+    if (
+      targetLibrary.owner?.id !== context.user?.id &&
+      context.user?.role?.type !== ROLE.ADMIN
+    ) {
+      throw new GraphQLError(
+        "You are not authorized to add books to this library",
+      );
+    }
+
     // added query runner to handle the transaction
     const queryRunner = DBModle.dbInstance.createQueryRunner();
     await queryRunner.startTransaction();
@@ -177,6 +201,18 @@ export const libraryBookMutation = {
 
       // commit the transaction
       await queryRunner.commitTransaction();
+
+      // Copies just moved into this library's stock — let anyone waiting
+      // on these titles know, if they're now actually available.
+      const touchedBookIds = new Set(
+        payload
+          .filter((item) => (item.quantityAvailable ?? 0) > 0)
+          .map((item) => item.book!.id),
+      );
+      await Promise.all(
+        Array.from(touchedBookIds).map((id) => publishWaitlistCheck(id)),
+      );
+
       return {
         success: true,
         message: "Books added to library successfully",
@@ -188,6 +224,50 @@ export const libraryBookMutation = {
     } finally {
       // release the query runner
       await queryRunner.release();
+    }
+  },
+
+  // Updates a library's own copy count for a book it stocks (LibraryBook),
+  // as distinct from updateBook, which edits the shared catalog entry.
+  updateLibraryBook: async (
+    _,
+    { id, input }: { id: string; input: Partial<LibraryBook> },
+    context: any,
+  ) => {
+    try {
+      const libraryBook = await libraryBookRepository.findOne({
+        where: { id },
+        relations: ["book", "library", "library.owner"],
+      });
+
+      if (!libraryBook) {
+        throw new GraphQLError("Library book not found");
+      }
+
+      if (
+        libraryBook.library.owner?.id !== context.user?.id &&
+        context.user?.role?.type !== ROLE.ADMIN
+      ) {
+        throw new GraphQLError(
+          "You are not authorized to update this library's inventory",
+        );
+      }
+
+      await libraryBookRepository.update(id, input);
+
+      if ((input.quantityAvailable ?? 0) > 0) {
+        await publishWaitlistCheck(libraryBook.book.id);
+      }
+
+      return await libraryBookRepository.findOne({
+        where: { id },
+        relations: ["book", "library"],
+      });
+    } catch (error) {
+      if (error instanceof GraphQLError) throw error;
+      throw new GraphQLError(
+        error.message || "Failed to update library inventory",
+      );
     }
   },
 };

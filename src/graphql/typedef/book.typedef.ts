@@ -48,6 +48,9 @@ export const bookTypeDef = gql`
     quantityAvailable: Int
     cost: Float
     rentPrice: Float
+    author: String
+    coverImage: String
+    publishedDate: Date
   }
 
   input updateBookInput {
@@ -84,6 +87,10 @@ export const bookTypeDef = gql`
     publishedDate: Date
     coverImage: String
     author: String
+    reviews: [Review!]!
+    averageRating: Float
+    "Real, currently-borrowable stock: the sum of this book's quantityAvailable across every library that stocks it (unlike the quantityAvailable field above, which is just the unassigned shared pool)."
+    totalAvailableCopies: Int
   }
 
   type Query {

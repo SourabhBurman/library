@@ -1,11 +1,13 @@
 import { GraphQLError } from "graphql";
 import { libraryRepository } from "../../../config/db.connection";
+import { getOrSetCache } from "../../../util/cache";
 
 export const libraryQueries = {
     getLibraries: async () => {
         try {
-            const libraries = await libraryRepository.find();
-            return libraries;
+            // No arguments -> one fixed cache key. Libraries are created/edited
+            // far less often than they're read (every dashboard page shows them).
+            return await getOrSetCache("libraries:all", 60, () => libraryRepository.find());
         } catch (error) {
             throw new GraphQLError(error.message || "Failed to fetch libraries");
         }
