@@ -7,9 +7,37 @@ import { TransactionHistory } from "../entity/transactionHistory.entity";
 import { Order } from "../entity/order.entity";
 import { Notification } from "../entity/notification.entity";
 import { PAYMENT_STATUS, ORDER_STATUS_ENUM, NOTIFICATION_TYPE } from "../enums";
+import {
+  PaymentStatusEvent,
+  pushNotificationToUser,
+  pushPaymentStatusToUser,
+} from "../util/notify";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_dummy");
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_test_dummy";
+
+/**
+ * Tells the user's browser (if connected) about a payment outcome the
+ * webhook just recorded: `payment_status` drives the checkout/success
+ * page, `notification` refreshes the bell. Sends a small explicit DTO for
+ * the notification — the saved entity carries the full `user` relation,
+ * password hash included (same reasoning as util/waitlist.ts).
+ */
+const pushOrderOutcome = (
+  userId: string,
+  notification: Notification,
+  status: PaymentStatusEvent,
+) =>
+  Promise.all([
+    pushPaymentStatusToUser(userId, status),
+    pushNotificationToUser(userId, {
+      id: notification.id,
+      type: notification.type,
+      message: notification.message,
+      isRead: notification.isRead,
+      createdAt: notification.createdAt,
+    }),
+  ]);
 
 export const stripeWebhookFunction = async (req: Request, res: Response) => {
   const sig = req.headers["stripe-signature"];
@@ -33,6 +61,15 @@ export const stripeWebhookFunction = async (req: Request, res: Response) => {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
       const stripePaymentIntentId = paymentIntent.id;
 
+      // Filled in only once the DB transaction below has committed — the
+      // browser must never be told "confirmed" about something that could
+      // still roll back.
+      let livePush: {
+        userId: string;
+        notification: Notification;
+        status: PaymentStatusEvent;
+      } | null = null;
+
       const queryRunner = DBModle.dbInstance.createQueryRunner();
       await queryRunner.startTransaction();
 
@@ -51,8 +88,11 @@ export const stripeWebhookFunction = async (req: Request, res: Response) => {
           },
         );
 
+        // Unknown intent, or a duplicate delivery of one already handled —
+        // Stripe retries webhooks, so this is expected. `finally` below
+        // releases the runner.
         if (!transaction || transaction.paymentStatus === PAYMENT_STATUS.PAID) {
-          await queryRunner.release();
+          await queryRunner.rollbackTransaction();
           return res.status(200).json({ status: "ok" });
         }
 
@@ -74,22 +114,39 @@ export const stripeWebhookFunction = async (req: Request, res: Response) => {
           balance: (selectedLibrary.balance ?? 0) + amountInRupees,
         });
 
-        await queryRunner.manager.save(Notification, {
+        const message = `Your order for "${
+          order.libraryBook?.book?.name ?? "a book"
+        }" was confirmed.`;
+        const notification = await queryRunner.manager.save(Notification, {
           type: NOTIFICATION_TYPE.ORDER_UPDATE,
-          message: `Your order for "${
-            order.libraryBook?.book?.name ?? "a book"
-          }" was confirmed.`,
+          message,
           user: order.user,
           order,
         });
 
         await queryRunner.commitTransaction();
+
+        livePush = {
+          userId: order.user.id,
+          notification,
+          status: {
+            paymentIntentId: stripePaymentIntentId,
+            orderId: order.id,
+            paymentStatus: PAYMENT_STATUS.PAID,
+            orderStatus: order.current_status,
+            message,
+          },
+        };
       } catch (error) {
         await queryRunner.rollbackTransaction();
         console.error("Webhook processing error:", error);
         return res.status(500).json({ error: "Internal Server Error" });
       } finally {
         await queryRunner.release();
+      }
+
+      if (livePush) {
+        await pushOrderOutcome(livePush.userId, livePush.notification, livePush.status);
       }
       break;
     }
@@ -122,16 +179,28 @@ export const stripeWebhookFunction = async (req: Request, res: Response) => {
             transaction.order &&
             transaction.order.current_status !== ORDER_STATUS_ENUM.CANCELLED
           ) {
+            const message = "Your payment failed and the order was cancelled.";
             await DBModle.dbInstance.manager.update(
               Order,
               transaction.order.id,
               { current_status: ORDER_STATUS_ENUM.CANCELLED },
             );
-            await DBModle.dbInstance.manager.save(Notification, {
-              type: NOTIFICATION_TYPE.ORDER_UPDATE,
-              message: "Your payment failed and the order was cancelled.",
-              user: transaction.order.user,
-              order: transaction.order,
+            const notification = await DBModle.dbInstance.manager.save(
+              Notification,
+              {
+                type: NOTIFICATION_TYPE.ORDER_UPDATE,
+                message,
+                user: transaction.order.user,
+                order: transaction.order,
+              },
+            );
+
+            await pushOrderOutcome(transaction.order.user.id, notification, {
+              paymentIntentId: stripePaymentIntentId,
+              orderId: transaction.order.id,
+              paymentStatus: PAYMENT_STATUS.FAILED,
+              orderStatus: ORDER_STATUS_ENUM.CANCELLED,
+              message,
             });
           }
         }

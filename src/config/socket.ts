@@ -93,8 +93,14 @@ export const initSocket = (httpServer: HTTPServer) => {
   subscriber.on("message", (channel, message) => {
     if (channel !== NOTIFICATIONS_CHANNEL) return;
     try {
-      const { userId, notification } = JSON.parse(message);
-      io?.to(`user:${String(userId)}`).emit("notification", notification);
+      // `event`/`payload` come from util/notify.ts. The older
+      // `{ userId, notification }` shape is still accepted so a worker
+      // process running an older build keeps delivering during a deploy.
+      const { userId, event, payload, notification } = JSON.parse(message);
+      io?.to(`user:${String(userId)}`).emit(
+        event ?? "notification",
+        payload ?? notification,
+      );
     } catch (error) {
       logger.error({ err: error }, "Failed to relay pushed notification");
     }
